@@ -3,18 +3,39 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "./ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
 
 interface ComplaintFormProps {
   userId: string;
   onBack?: () => void;
-  onSubmit: (data: { category: string; title: string; content: string }) => void;
+  onSubmit: (data: {
+    category: string;
+    title: string;
+    content: string;
+    author: string;
+  }) => void;
 }
 
-export default function ComplaintForm({ userId, onBack, onSubmit }: ComplaintFormProps) {
+export default function ComplaintForm({
+  userId,
+  onBack,
+  onSubmit,
+}: ComplaintFormProps) {
   const [category, setCategory] = useState("");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -25,7 +46,7 @@ export default function ComplaintForm({ userId, onBack, onSubmit }: ComplaintFor
     "교육 관련",
     "동아리 활동",
     "생활 지도",
-    "기타"
+    "기타",
   ];
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -56,7 +77,12 @@ export default function ComplaintForm({ userId, onBack, onSubmit }: ComplaintFor
       return;
     }
 
-    onSubmit({ category, title: title.trim(), content: content.trim(), author: userId });
+    onSubmit({
+      category,
+      title: title.trim(),
+      content: content.trim(),
+      author: userId,
+    });
 
     // 폼 초기화
     setCategory("");
@@ -81,7 +107,9 @@ export default function ComplaintForm({ userId, onBack, onSubmit }: ComplaintFor
       <Card>
         <CardHeader>
           <CardTitle>민원 등록</CardTitle>
-          <CardDescription>겪고 있는 고충이나 민원을 등록해주세요.</CardDescription>
+          <CardDescription>
+            겪고 있는 고충이나 민원을 등록해주세요.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -93,7 +121,9 @@ export default function ComplaintForm({ userId, onBack, onSubmit }: ComplaintFor
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((cat) => (
-                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                    <SelectItem key={cat} value={cat}>
+                      {cat}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -104,11 +134,15 @@ export default function ComplaintForm({ userId, onBack, onSubmit }: ComplaintFor
               <Input
                 id="title"
                 value={title}
-                onChange={(e) => { if (e.target.value.length <= 20) setTitle(e.target.value) }}
+                onChange={(e) => {
+                  if (e.target.value.length <= 20) setTitle(e.target.value);
+                }}
                 placeholder="민원 제목을 입력해주세요"
                 maxLength={100}
               />
-              <div className="text-right text-sm text-gray-500">{content.length}/20자</div>
+              <div className="text-right text-sm text-gray-500">
+                {title.length}/20자
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -116,15 +150,21 @@ export default function ComplaintForm({ userId, onBack, onSubmit }: ComplaintFor
               <Textarea
                 id="content"
                 value={content}
-                onChange={(e) => { if (e.target.value.length <= 500) setContent(e.target.value) }}
+                onChange={(e) => {
+                  if (e.target.value.length <= 500) setContent(e.target.value);
+                }}
                 placeholder="민원 내용을 자세히 입력해주세요"
                 rows={6}
                 className="resize-none"
               />
-              <div className="text-right text-sm text-gray-500">{content.length}/500자</div>
+              <div className="text-right text-sm text-gray-500">
+                {content.length}/500자
+              </div>
             </div>
 
-            <Button type="submit" className="w-full">민원 신청</Button>
+            <Button type="submit" className="w-full">
+              민원 신청
+            </Button>
           </form>
         </CardContent>
       </Card>

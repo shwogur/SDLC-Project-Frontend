@@ -3,7 +3,7 @@ import { Badge } from "./ui/badge";
 import { LogOut, User } from "lucide-react";
 
 interface NavbarProps {
-  userType: 'student' | 'council' | 'teacher';
+  userType: "student" | "council" | "teacher";
   userId: string;
   onLogout: () => void;
 }
@@ -11,19 +11,27 @@ interface NavbarProps {
 export default function Navbar({ userType, userId, onLogout }: NavbarProps) {
   const getUserTypeLabel = (type: string) => {
     switch (type) {
-      case 'student': return '학생';
-      case 'council': return '학생회';
-      case 'teacher': return '선생님';
-      default: return '';
+      case "student":
+        return "학생";
+      case "council":
+        return "학생회";
+      case "teacher":
+        return "선생님";
+      default:
+        return "";
     }
   };
 
   const getBadgeColor = (type: string) => {
     switch (type) {
-      case 'student': return 'bg-blue-100 text-blue-800';
-      case 'council': return 'bg-green-100 text-green-800';
-      case 'teacher': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case "student":
+        return "bg-blue-100 text-blue-800";
+      case "council":
+        return "bg-green-100 text-green-800";
+      case "teacher":
+        return "bg-purple-100 text-purple-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
@@ -33,7 +41,7 @@ export default function Navbar({ userType, userId, onLogout }: NavbarProps) {
         <div className="flex items-center space-x-4">
           <h1 className="text-xl">학생 민원 관리 시스템</h1>
         </div>
-        
+
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">
             <User size={16} />
@@ -42,7 +50,7 @@ export default function Navbar({ userType, userId, onLogout }: NavbarProps) {
               {getUserTypeLabel(userType)}
             </Badge>
           </div>
-          
+
           <Button
             variant="outline"
             size="sm"

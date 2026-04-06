@@ -1,116 +1,101 @@
 import { useState, useEffect } from "react";
+import axios from "axios";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import {
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSlot,
-} from "./ui/input-otp";
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "./ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "./ui/input-otp";
 import { toast } from "sonner@2.0.3";
 import { Mail, CheckCircle } from "lucide-react";
 
 interface LoginPageProps {
-  onLogin: (userType: 'student' | 'council' | 'teacher', userId: string) => void;
+  onLogin: (
+    userType: "student" | "council" | "teacher",
+    userId: string
+  ) => void;
 }
 
 export default function LoginPage({ onLogin }: LoginPageProps) {
   const [schoolId, setSchoolId] = useState("");
-  const [userType, setUserType] = useState<'student' | 'council' | 'teacher'>('student');
+  const [userType, setUserType] = useState<"student" | "council" | "teacher">(
+    "student"
+  );
   const [isTeacher, setIsTeacher] = useState(false);
-  const [verificationStep, setVerificationStep] = useState<'email' | 'code'>('email');
-  const [sentCode, setSentCode] = useState<string>("");
+  const [verificationStep, setVerificationStep] = useState<"email" | "code">(
+    "email"
+  );
   const [enteredCode, setEnteredCode] = useState("");
   const [isCodeSent, setIsCodeSent] = useState(false);
 
-  // 이메일 형식에 따라 사용자 타입 자동 결정
+  // 🔥 새로운 직위 자동 판별 규칙
+  // sdh로 시작하지 않으면 → 선생님
+  // sdh로 시작하면 → 학생/학생회
   useEffect(() => {
-    if (schoolId.endsWith('@sdh.hs.kr')) {
-      if (!schoolId.startsWith('sdh')) {
-        // 선생님 계정
-        setIsTeacher(true);
-        setUserType('teacher');
-      } else {
-        // 학생/학생회
-        setIsTeacher(false);
-        if (userType === 'teacher') setUserType('student');
-      }
+    if (!schoolId.trim()) return;
+
+    const localPart = schoolId.split("@")[0] || "";
+
+    if (!localPart.startsWith("sdh")) {
+      setIsTeacher(true);
+      setUserType("teacher");
     } else {
       setIsTeacher(false);
+      if (userType === "teacher") setUserType("student");
     }
   }, [schoolId]);
-  
 
-  // 인증번호 생성 (6자리 숫자)
-  const generateVerificationCode = () => {
-    return Math.floor(100000 + Math.random() * 900000).toString();
-  };
-
-  // 인증번호 발송 처리
-  const handleSendCode = (e: React.FormEvent) => {
+  // 인증번호 요청
+  const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!schoolId.trim()) {
-      toast.error("학교 계정을 입력해주세요.");
-      return;
-    }
 
-    // 학교 계정 형식 검증 (@sdh.hs.kr로 끝나야 함)
-    if (!schoolId.endsWith('@sdh.hs.kr')) {
-      toast.error("올바른 학교 계정 형식이 아닙니다. (@sdh.hs.kr로 끝나야 합니다)");
-      return;
-    }
+    try {
+      await axios.post("http://localhost:8070/api/auth/send-code", null, {
+        params: { email: schoolId },
+      });
 
-    // 선생님 계정은 sdh로 시작하면 안됨
-    if (isTeacher && schoolId.startsWith('sdh')) {
-      toast.error("선생님 계정은 sdh로 시작할 수 없습니다.");
-      return;
+      setIsCodeSent(true);
+      setVerificationStep("code");
+      toast.success(`${schoolId}로 인증번호가 발송되었습니다.`);
+    } catch (err) {
+      console.error(err);
+      toast.error("인증번호 발송에 실패했습니다.");
     }
-
-    // 학생/학생회 계정은 sdh로 시작해야 함
-    if (!isTeacher && !schoolId.startsWith('sdh')) {
-      toast.error("학생 계정은 sdh로 시작해야 합니다.");
-      return;
-    }
-
-    // Mock: 실제로는 백엔드에서 이메일 발송
-    const code = generateVerificationCode();
-    setSentCode(code);
-    setIsCodeSent(true);
-    setVerificationStep('code');
-    
-    // 개발용: 콘솔에 인증번호 표시
-    console.log(`인증번호가 ${schoolId}로 발송되었습니다: ${code}`);
-    toast.success(`인증번호가 ${schoolId}로 발송되었습니다.`);
   };
 
-  // 인증번호 확인 및 로그인
-  const handleVerifyCode = (e: React.FormEvent) => {
+  // 인증번호 확인
+  const handleVerifyCode = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (enteredCode.length !== 6) {
-      toast.error("6자리 인증번호를 입력해주세요.");
-      return;
-    }
 
-    // Mock: 실제로는 백엔드에서 검증
-    if (enteredCode === sentCode) {
-      toast.success("인증 성공! 로그인합니다.");
-      onLogin(userType, schoolId);
-    } else {
-      toast.error("인증번호가 일치하지 않습니다.");
-      setEnteredCode("");
-    }
-  };
+    try {
+      const res = await axios.post(
+        "http://localhost:8070/api/auth/verify",
+        null,
+        { params: { email: schoolId, code: enteredCode } }
+      );
 
-  // 이메일 재입력
-  const handleChangeEmail = () => {
-    setVerificationStep('email');
-    setIsCodeSent(false);
-    setEnteredCode("");
-    setSentCode("");
+      if (res.data === true) {
+        toast.success("인증 성공!");
+        onLogin(userType, schoolId);
+      } else {
+        toast.error("인증번호가 일치하지 않습니다.");
+        setEnteredCode("");
+      }
+    } catch (err) {
+      toast.error("인증 중 오류가 발생했습니다.");
+    }
   };
 
   return (
@@ -119,13 +104,14 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
         <CardHeader className="text-center">
           <CardTitle>학생 민원 관리 시스템</CardTitle>
           <CardDescription>
-            {verificationStep === 'email' 
-              ? '학교 계정으로 인증받기' 
-              : '인증번호를 입력해주세요'}
+            {verificationStep === "email"
+              ? "학교 계정으로 인증받기"
+              : "인증번호를 입력해주세요"}
           </CardDescription>
         </CardHeader>
+
         <CardContent>
-          {verificationStep === 'email' ? (
+          {verificationStep === "email" ? (
             <form onSubmit={handleSendCode} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="schoolId">학교 계정</Label>
@@ -138,11 +124,11 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                   className="w-full"
                 />
               </div>
-              
+
               {!isTeacher && (
                 <div className="space-y-2">
                   <Label htmlFor="userType">직위 선택</Label>
-                  <Select value={userType} onValueChange={(value: 'student' | 'council' | 'teacher') => setUserType(value)}>
+                  <Select value={userType} onValueChange={setUserType}>
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="직위를 선택해주세요" />
                     </SelectTrigger>
@@ -163,35 +149,27 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                 </div>
               )}
 
-              <Button type="submit" className="w-full flex items-center justify-center space-x-2">
+              <Button
+                type="submit"
+                className="w-full flex items-center justify-center space-x-2"
+              >
                 <Mail size={18} />
                 <span>인증번호 받기</span>
               </Button>
             </form>
           ) : (
             <form onSubmit={handleVerifyCode} className="space-y-4">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                <div className="flex items-start space-x-2">
-                  <Mail className="text-blue-600 mt-0.5" size={20} />
-                  <div className="flex-1">
-                    <p className="text-sm text-blue-900">
-                      <span className="block mb-1">{schoolId}</span>
-                      인증번호가 발송되었습니다.
-                    </p>
-                    <p className="text-xs text-blue-700 mt-2">
-                      개발 모드: 콘솔에서 인증번호를 확인하세요.
-                    </p>
-                  </div>
-                </div>
-              </div>
+              <div className="space-y-2 text-center">
+                <Label htmlFor="verificationCode" className="w-full block">
+                  인증번호 입력
+                </Label>
 
-              <div className="space-y-2">
-                <Label htmlFor="verificationCode">인증번호 (6자리)</Label>
-                <div className="flex justify-center">
-                  <InputOTP 
-                    maxLength={6} 
+                <div className="flex justify-center w-full">
+                  <InputOTP
+                    maxLength={6}
                     value={enteredCode}
-                    onChange={(value) => setEnteredCode(value)}
+                    onChange={setEnteredCode}
+                    className="mx-auto"
                   >
                     <InputOTPGroup>
                       <InputOTPSlot index={0} />
@@ -205,32 +183,12 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                 </div>
               </div>
 
-              <div className="flex space-x-2">
-                <Button 
-                  type="submit" 
-                  className="flex-1 flex items-center justify-center space-x-2"
-                  disabled={enteredCode.length !== 6}
-                >
-                  <CheckCircle size={18} />
-                  <span>인증하기</span>
-                </Button>
-                <Button 
-                  type="button"
-                  variant="outline" 
-                  onClick={handleChangeEmail}
-                  className="flex-shrink-0"
-                >
-                  이메일 변경
-                </Button>
-              </div>
-
               <Button
-                type="button"
-                variant="ghost"
-                className="w-full text-sm"
-                onClick={handleSendCode}
+                type="submit"
+                className="w-full flex items-center justify-center space-x-2"
               >
-                인증번호 재발송
+                <CheckCircle size={18} />
+                <span>인증하기</span>
               </Button>
             </form>
           )}
